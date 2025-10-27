@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+build/
+dist/
+out/
+coverage/
+.next/
+.nuxt/
+
+# Generated files
+*.min.js
+*.min.css
+bundle.js
+*.generated.*
+
+# Package files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Documentation (if auto-generated)
+docs/api/
+CHANGELOG.md
+
+# Config files (often have specific formatting requirements)
+.eslintrc.js
+webpack.config.js
+
+# Legacy/vendor code
+legacy/
+third-party/
+
+# Specific file types (if needed)
+*.html
+*.svg
+*.md

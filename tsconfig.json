@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "paths": {
+      "@/core/*": ["core/*"],
+      "@/config/*": ["config/*"],
+      "@/modules/*": ["modules/*"]
+    },
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+
+    /* Type-safety */
+    "strict": true,
+    "noUnusedLocals": false,
+    "strictPropertyInitialization": false,
+    "noImplicitAny": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noUnusedParameters": false,
+
+    /* Decorators & interop */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    /* Build */
+    "incremental": true,
+    "isolatedModules": true,
+    "sourceMap": true,
+    "removeComments": true,
+    "declaration": true,
+
+    /* Resolution */
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", ".lintstagedrc.js"]
+}
