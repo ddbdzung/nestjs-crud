@@ -1,23 +1,10 @@
 module.exports = {
   extends: ['@commitlint/config-conventional'],
   rules: {
-    'type-enum': [2, 'always', [
-      'feat', 'fix', 'perf', 'refactor', 'docs', 'style', 'test', 'chore', 'ci', 'revert', 'build'
-    ]],
-    'type-case': [2, 'always', 'lower-case'],
-    'type-empty': [2, 'never'],
-
-    'scope-enum': [2, 'always', [
-      'core', 'modules', 'config', 'deps', 'docs', 'ci', 'dx'
-    ]],
-
-    'subject-case': [2, 'never', ['sentence-case', 'start-case', 'pascal-case', 'upper-case']],
-    'subject-empty': [2, 'never'],
-
-    'header-max-length': [2, 'always', 72],
-
-    'body-leading-blank': [2, 'always'],
-    'footer-leading-blank': [2, 'always'],
-    'footer-max-line-length': [2, 'always', 100]
-  }
-};
+    // Simplified rules - more flexible for newbies
+    'type-enum': [2, 'always', ['feat', 'fix', 'docs', 'style', 'refactor', 'test', 'chore']],
+    'scope-empty': [0], // Allow commits without scope
+    'subject-case': [0], // Allow any case
+    'header-max-length': [1, 'always', 100], // Warning only, increased limit
+  },
+}

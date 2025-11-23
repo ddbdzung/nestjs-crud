@@ -2,7 +2,6 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "CommonJS",
-    "rootDir": "./src",
     "outDir": "./dist",
     "baseUrl": "./src",
     "paths": {
@@ -40,6 +39,6 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "test/**/*.ts", "src/core/logger"],
   "exclude": ["node_modules", "dist", ".lintstagedrc.js"]
 }

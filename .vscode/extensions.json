@@ -1,0 +1,25 @@
+{
+  "recommendations": [
+    // Essential - Code Quality
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+
+    // NestJS - Snippets only (extension pack removed - too bloated)
+    "NestJS.vscode-nestjs-snippets",
+
+    // TypeScript - Better error messages
+    "yoavbls.pretty-ts-errors",
+
+    // Utilities
+    "christian-kohler.path-intellisense",
+    "mikestead.dotenv"
+  ],
+  "unwantedRecommendations": [
+    // Heavy/duplicate extensions
+    "NestJS.nestjs-extension-pack",
+    "eamodio.gitlens",
+    "orta.vscode-jest",
+    "wayou.vscode-todo-highlight",
+    "aaron-bond.better-comments"
+  ]
+}
