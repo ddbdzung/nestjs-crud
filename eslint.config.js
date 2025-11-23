@@ -10,23 +10,21 @@ module.exports = tseslint.config({
     ...tseslint.configs.recommended,
     ...tseslint.configs.stylistic,
   ],
-  ignores: [
-    'node_modules',
-    'dist',
-    'coverage',
-    'public',
-    'static',
-    'vendor',
-  ],
+  ignores: ['node_modules', 'dist', 'coverage', 'public', 'static', 'vendor'],
   languageOptions: {
     parserOptions: {
-      project: ['./tsconfig.json', './tsconfig.test.json'],
+      project: './tsconfig.json',
     },
   },
   rules: {
     '@typescript-eslint/no-unused-vars': [
       'warn',
-      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+      },
     ],
     '@typescript-eslint/no-explicit-any': 'off',
     'no-console': 'error',

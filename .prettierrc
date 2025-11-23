@@ -9,14 +9,13 @@
   "plugins": ["@trivago/prettier-plugin-sort-imports"],
   "importOrder": [
     "<THIRD_PARTY_MODULES>",
-    "^@nestjs/.*$",
-    "^@/core/.*$",
-    "^@/configs/.*$",
-    "^@/providers/.*$",
-    "^@/modules/.*$",
-    "^@/utils/.*$",
+    "^@nestjs",
+    "^@/config",
+    "^@/core",
+    "^@/modules",
     "^[./]"
   ],
   "importOrderSeparation": true,
-  "importOrderSortSpecifiers": true
+  "importOrderSortSpecifiers": true,
+  "importOrderParserPlugins": ["typescript", "decorators-legacy"]
 }
