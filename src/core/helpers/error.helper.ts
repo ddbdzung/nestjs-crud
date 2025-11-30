@@ -2,9 +2,6 @@ import { IThrowable } from '../common.interface'
 import { CURRENT_ENV } from '../constants/common.constant'
 import { HTTP_STATUS } from '../constants/http-status.constant'
 
-/**
- * Base error options interface
- */
 export interface IBaseErrorOptions {
   /**
    * - HTTP status code (e.g., 400, 401, 403, 404, 500). Default: 500 (INTERNAL_SERVER_ERROR)
@@ -32,9 +29,6 @@ export interface IBaseErrorOptions {
   cause?: Error
 }
 
-/**
- * Serialized error object type
- */
 export interface ISerializedError {
   name: string
   message: string
@@ -46,8 +40,6 @@ export interface ISerializedError {
   stack?: string
   cause?: ISerializedError | { message: string; stack?: string }
 }
-
-const DEFAULT_ERROR = HTTP_STATUS.INTERNAL_SERVER_ERROR
 
 export class BaseError extends Error implements IThrowable {
   protected statusCode: number
@@ -69,8 +61,8 @@ export class BaseError extends Error implements IThrowable {
     this.message = message.trim()
 
     // HTTP context
-    this.statusCode = options.statusCode ?? DEFAULT_ERROR.code
-    this.errorCode = options.errorCode ?? DEFAULT_ERROR.key
+    this.statusCode = options.statusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR.code
+    this.errorCode = options.errorCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR.key
 
     // Error classification
     this.isOperational = options.isOperational ?? true
@@ -90,7 +82,6 @@ export class BaseError extends Error implements IThrowable {
       this.cause = options.cause
     }
 
-    // Capture stack trace
     Error.captureStackTrace(this, this.constructor)
   }
 

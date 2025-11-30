@@ -5,6 +5,8 @@
     "outDir": "./dist",
     "baseUrl": "./src",
     "paths": {
+      "@core": ["core/index"],
+      "@config": ["config/index"],
       "@/core/*": ["core/*"],
       "@/config/*": ["config/*"],
       "@/modules/*": ["modules/*"]

@@ -1,8 +1,6 @@
 import { IThrowable } from '../common.interface'
 import { HTTP_STATUS } from '../constants/http-status.constant'
 
-const successResponse = HTTP_STATUS.OK
-
 /**
  * Class to build standardized HTTP response
  * @type T - The type of the data
@@ -18,9 +16,9 @@ export class HttpResponse<T = any, K = Record<string, any>> implements IThrowabl
     protected message: string,
     protected metadata: K = {} as K
   ) {
-    this.statusCode = statusCode ?? successResponse.code
+    this.statusCode = statusCode ?? HTTP_STATUS.OK.code
     this.data = data
-    this.message = message ?? successResponse.message
+    this.message = message ?? HTTP_STATUS.OK.message
     this.metadata = metadata
     this.success = this.statusCode >= 200 && this.statusCode < 300
     this.timestamp = new Date()

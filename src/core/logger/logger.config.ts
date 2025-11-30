@@ -10,13 +10,13 @@ import * as winston from 'winston'
 
 import 'winston-daily-rotate-file'
 
-// ========================
-// NestJS Logger Service
-// ========================
-
-import { Injectable, LoggerService, Scope } from '@nestjs/common'
-
-import { CURRENT_ENV, ENVIRONMENT, LOG_LEVEL } from '../constants/common.constant'
+import {
+  CURRENT_ENV,
+  ENVIRONMENT,
+  LOG_LEVEL,
+  type ENVIRONMENT as ENVIRONMENT_TYPE,
+  type LOG_LEVEL as LOG_LEVEL_TYPE,
+} from '../constants/common.constant'
 
 // Types & Enums
 export interface CallerInfo {
@@ -37,7 +37,8 @@ export interface LogMetadata {
 // Configuration
 // ========================
 
-const LOG_LEVEL_CONFIG = (process.env.LOG_LEVEL as LOG_LEVEL) || LOG_LEVEL.INFO
+const LOG_LEVEL_CONFIG =
+  (process.env.LOG_LEVEL as (typeof LOG_LEVEL)[keyof typeof LOG_LEVEL]) || LOG_LEVEL.INFO
 const isTestEnv = CURRENT_ENV === ENVIRONMENT.TEST
 const isProductionEnv = CURRENT_ENV === ENVIRONMENT.PRODUCTION
 const ENABLE_CALLER_TRACKING = !isProductionEnv
@@ -59,7 +60,7 @@ const COLOR = {
   BLUE: '\x1b[34m',
 } as const
 
-const COLOR_BY_LEVEL: Record<LOG_LEVEL, string> = {
+const COLOR_BY_LEVEL: Record<(typeof LOG_LEVEL)[keyof typeof LOG_LEVEL], string> = {
   [LOG_LEVEL.ERROR]: COLOR.RED,
   [LOG_LEVEL.WARN]: COLOR.YELLOW,
   [LOG_LEVEL.INFO]: COLOR.GREEN,
@@ -133,8 +134,8 @@ function formatArgument(arg: any): string {
 /**
  * Get console log level based on environment
  */
-function getConsoleLogLevel(env: ENVIRONMENT): LOG_LEVEL {
-  const levelMap: Record<ENVIRONMENT, LOG_LEVEL> = {
+function getConsoleLogLevel(env: ENVIRONMENT_TYPE): LOG_LEVEL_TYPE {
+  const levelMap: Record<ENVIRONMENT_TYPE, LOG_LEVEL_TYPE> = {
     [ENVIRONMENT.PRODUCTION]: LOG_LEVEL.INFO,
     [ENVIRONMENT.DEVELOPMENT]: LOG_LEVEL.DEBUG,
     [ENVIRONMENT.STAGING]: LOG_LEVEL.VERBOSE,
@@ -146,8 +147,8 @@ function getConsoleLogLevel(env: ENVIRONMENT): LOG_LEVEL {
 /**
  * Get file log level based on environment
  */
-function getFileLogLevel(env: ENVIRONMENT): LOG_LEVEL {
-  const levelMap: Record<ENVIRONMENT, LOG_LEVEL> = {
+function getFileLogLevel(env: ENVIRONMENT_TYPE): LOG_LEVEL_TYPE {
+  const levelMap: Record<ENVIRONMENT_TYPE, LOG_LEVEL_TYPE> = {
     [ENVIRONMENT.PRODUCTION]: LOG_LEVEL.ERROR,
     [ENVIRONMENT.DEVELOPMENT]: LOG_LEVEL.DEBUG,
     [ENVIRONMENT.STAGING]: LOG_LEVEL.VERBOSE,
@@ -222,7 +223,7 @@ const contextFormat = winston.format((info) => {
 
     const userId = clsService.get<string>('userId')
     if (userId) info.userId = userId
-  } catch (error) {
+  } catch {
     // Ignore context errors in async operations
   }
 
@@ -235,7 +236,7 @@ const contextFormat = winston.format((info) => {
 const consoleFormat = winston.format.printf((info: any) => {
   const level = colorizeText(
     info.level.toUpperCase().padEnd(5),
-    COLOR_BY_LEVEL[info.level as LOG_LEVEL] || COLOR.RESET
+    COLOR_BY_LEVEL[info.level as LOG_LEVEL_TYPE] || COLOR.RESET
   )
 
   const timestamp = colorizeText(info.timestamp, COLOR.GRAY)
@@ -264,7 +265,7 @@ const consoleFormat = winston.format.printf((info: any) => {
  * File format - remove caller to reduce size
  */
 const fileFormat = winston.format((info) => {
-  const { caller, ms, ...rest } = info
+  const { caller: _caller, ms: _ms, ...rest } = info
   return rest
 })
 
@@ -289,7 +290,7 @@ export const winstonLogger = winston.createLogger({
     new winston.transports.DailyRotateFile({
       filename: '%DATE%-error.log',
       dirname: path.join(process.cwd(), 'logs'),
-      level: getFileLogLevel(CURRENT_ENV as ENVIRONMENT),
+      level: getFileLogLevel(CURRENT_ENV as ENVIRONMENT_TYPE),
       format: winston.format.combine(fileFormat(), winston.format.json()),
       datePattern: 'DD-MM-YYYY',
       maxFiles: '7d',
@@ -298,7 +299,7 @@ export const winstonLogger = winston.createLogger({
     new winston.transports.DailyRotateFile({
       filename: '%DATE%-combined.log',
       dirname: path.join(process.cwd(), 'logs'),
-      level: getConsoleLogLevel(CURRENT_ENV as ENVIRONMENT),
+      level: getConsoleLogLevel(CURRENT_ENV as ENVIRONMENT_TYPE),
       format: winston.format.combine(fileFormat(), winston.format.json()),
       datePattern: 'DD-MM-YYYY',
       maxFiles: '14d',
@@ -306,59 +307,11 @@ export const winstonLogger = winston.createLogger({
     }),
     new winston.transports.Console({
       silent: isTestEnv,
-      level: getConsoleLogLevel(CURRENT_ENV as ENVIRONMENT),
+      level: getConsoleLogLevel(CURRENT_ENV as ENVIRONMENT_TYPE),
       stderrLevels: [LOG_LEVEL.ERROR],
       format: consoleFormat,
     }),
   ],
 })
-
-// ========================
-
-// ========================
-
-@Injectable({ scope: Scope.TRANSIENT })
-export class AppLogger implements LoggerService {
-  private context?: string
-
-  constructor(private readonly cls?: ClsService) {
-    if (cls && !clsService) {
-      setClsService(cls)
-    }
-  }
-
-  setContext(context: string): void {
-    this.context = context
-  }
-
-  private formatMessage(message: any, context?: string): string {
-    const ctx = context || this.context
-    return ctx ? `[${ctx}] ${message}` : message
-  }
-
-  log(message: any, context?: string): void {
-    winstonLogger.info(this.formatMessage(message, context))
-  }
-
-  error(message: any, trace?: string, context?: string): void {
-    winstonLogger.error(this.formatMessage(message, context), trace ? { trace } : {})
-  }
-
-  warn(message: any, context?: string): void {
-    winstonLogger.warn(this.formatMessage(message, context))
-  }
-
-  debug(message: any, context?: string): void {
-    winstonLogger.debug(this.formatMessage(message, context))
-  }
-
-  verbose(message: any, context?: string): void {
-    winstonLogger.verbose(this.formatMessage(message, context))
-  }
-
-  http(message: any, meta?: LogMetadata): void {
-    winstonLogger.http(message, meta)
-  }
-}
 
 export default winstonLogger

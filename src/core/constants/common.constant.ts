@@ -1,19 +1,15 @@
-// ============================================
-// Environment & Application
-// ============================================
+export const ENVIRONMENT = {
+  DEVELOPMENT: 'development', // Local machine maybe
+  PRODUCTION: 'production',
+  TEST: 'test',
+  STAGING: 'staging',
+} as const
 
-export enum ENVIRONMENT {
-  DEVELOPMENT = 'development', // Local machine maybe
-  PRODUCTION = 'production',
-  TEST = 'test',
-  STAGING = 'staging',
-}
-
-export enum APP_NAME {
-  MAIN = 'main', // Main app (for serving API requests)
-  WORKER = 'worker', // Worker app (for background processing tasks)
-  SOCKET = 'socket', // Socket app (for real-time communication)
-}
+export const APP_NAME = {
+  MAIN: 'main', // Main app (for serving API requests)
+  WORKER: 'worker', // Worker app (for background processing tasks)
+  SOCKET: 'socket', // Socket app (for real-time communication)
+} as const
 
 /**
  * Single source of truth for current environment
@@ -28,13 +24,13 @@ export const CURRENT_ENV = process.env.NODE_ENV || ENVIRONMENT.DEVELOPMENT
  * Standardized logging levels based on best practices.
  * Used to classify the severity and verbosity of log messages.
  */
-export enum LOG_LEVEL {
+export const LOG_LEVEL = {
   /**
    * DEBUG – developer-focused debugging
    * - Use for tracking state, parameters, internal flow
    * - Helpful in staging for bug investigation
    */
-  DEBUG = 'debug',
+  DEBUG: 'debug',
 
   /**
    * INFO – general system information
@@ -42,7 +38,7 @@ export enum LOG_LEVEL {
    *   (e.g., service started, user logged in, job completed)
    * - Usually always enabled in production for business insights
    */
-  INFO = 'info',
+  INFO: 'info',
 
   /**
    * WARN – warnings
@@ -50,7 +46,7 @@ export enum LOG_LEVEL {
    *   (e.g., API retry threshold reached, slow response)
    * - Often triggers low-priority alerts
    */
-  WARN = 'warn',
+  WARN: 'warn',
 
   /**
    * ERROR – recoverable errors
@@ -58,20 +54,23 @@ export enum LOG_LEVEL {
    *   (e.g., DB query failed, API call timeout, validation error)
    * - Typically triggers medium-priority alerts
    */
-  ERROR = 'error',
+  ERROR: 'error',
 
   /**
    * VERBOSE – detailed info for tracing complex flows
    * - Use for tracing complex flows (e.g., database query results)
    */
-  VERBOSE = 'verbose',
+  VERBOSE: 'verbose',
 
   /**
    * HTTP – HTTP-specific events
    * - Use for HTTP-specific events (e.g., request logs, status codes, latency)
    */
-  HTTP = 'http',
-}
+  HTTP: 'http',
+} as const
+
+export type LOG_LEVEL = (typeof LOG_LEVEL)[keyof typeof LOG_LEVEL]
+export type ENVIRONMENT = (typeof ENVIRONMENT)[keyof typeof ENVIRONMENT]
 
 // ============================================
 // HTTP & API
@@ -81,15 +80,6 @@ export const API_PREFIX = 'api'
 
 export const REQUEST_ID_KEY = 'X-Request-Id'
 
-/**
- * Timeout definitions in milliseconds
- */
-export enum TIMEOUT_CONTROLLER {
-  DEFAULT = 10_000,
-  HEAVY_PROCESS = 20_000,
-  ENQUEUE_PROCESS = 5_000,
-}
-
 // ============================================
 // Error Handling
 // ============================================
@@ -97,3 +87,9 @@ export enum TIMEOUT_CONTROLLER {
 export const DEFAULT_ERROR_NAME = 'InternalServerError'
 export const DEFAULT_ERROR_MESSAGE = 'An unexpected error occurred...'
 export const DEFAULT_ERROR_CODE = 'INTERNAL_SERVER_ERROR'
+
+// ============================================
+// Provider Token
+// ============================================
+
+export const REDIS_SERVICE = Symbol('REDIS_SERVICE')

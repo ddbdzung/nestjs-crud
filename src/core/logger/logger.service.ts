@@ -83,7 +83,7 @@ export class AppLogger implements LoggerService {
    */
   setUserId(userId: string): void {
     if (this.cls) {
-      this.cls.set('userId', userId, 3)
+      this.cls.set('userId', userId)
     }
   }
 
