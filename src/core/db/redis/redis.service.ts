@@ -1,3 +1,5 @@
+import { ClsService } from 'nestjs-cls'
+
 import { Injectable } from '@nestjs/common'
 
 import { config } from '@config'
@@ -15,15 +17,22 @@ export class RedisService {
   public queue: RedisClient
   public socket: RedisClient
 
-  constructor(protected readonly logger: AppLogger) {
-    const createRedisClient = (alias: string, database: number): RedisClient => {
-      this.logger.setContext(alias)
-      return new RedisClientExtend(this.logger, { db: database }).store
+  constructor(private readonly cls: ClsService) {
+    // Tạo logger riêng cho mỗi Redis client với context riêng
+    const createRedisClient = (
+      alias: string,
+      database: number
+    ): RedisClient => {
+      const clientLogger = AppLogger.create(this.cls, alias)
+      return new RedisClientExtend(clientLogger, { db: database }).store
     }
 
     this.common = createRedisClient('common-redis', config.REDIS_STORAGE.COMMON)
     this.auth = createRedisClient('auth-redis', config.REDIS_STORAGE.AUTH)
-    this.setting = createRedisClient('setting-redis', config.REDIS_STORAGE.SETTING)
+    this.setting = createRedisClient(
+      'setting-redis',
+      config.REDIS_STORAGE.SETTING
+    )
     this.api = createRedisClient('api-redis', config.REDIS_STORAGE.API)
     this.db = createRedisClient('db-redis', config.REDIS_STORAGE.DB)
     this.queue = createRedisClient('queue-redis', config.REDIS_STORAGE.QUEUE)

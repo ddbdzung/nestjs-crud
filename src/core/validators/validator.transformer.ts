@@ -11,7 +11,9 @@ export function Trim() {
 }
 
 export function TransformBoolean() {
-  return Transform(({ value }) => [true, 'true', 'True', 'TRUE'].includes(value))
+  return Transform(({ value }) =>
+    [true, 'true', 'True', 'TRUE'].includes(value)
+  )
 }
 
 export function TransformArray() {
@@ -25,7 +27,9 @@ export function TransformMongoId(options?: ITransformerOptions) {
   return Transform(
     ({ value }) =>
       value &&
-      (options?.each ? value.map((v: any) => new Types.ObjectId(v)) : new Types.ObjectId(value))
+      (options?.each
+        ? value.map((v: any) => new Types.ObjectId(v))
+        : new Types.ObjectId(value))
   )
 }
 

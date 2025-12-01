@@ -12,10 +12,9 @@ import 'winston-daily-rotate-file'
 
 import {
   CURRENT_ENV,
+  ENABLE_TRACE_FILE,
   ENVIRONMENT,
   LOG_LEVEL,
-  type ENVIRONMENT as ENVIRONMENT_TYPE,
-  type LOG_LEVEL as LOG_LEVEL_TYPE,
 } from '../constants/common.constant'
 
 // Types & Enums
@@ -25,20 +24,11 @@ export interface CallerInfo {
   filePath: string
 }
 
-export interface LogMetadata {
-  requestId?: string
-  userId?: string
-  caller?: CallerInfo
-  stack?: string
-  [key: string]: any
-}
-
 // ========================
 // Configuration
 // ========================
 
-const LOG_LEVEL_CONFIG =
-  (process.env.LOG_LEVEL as (typeof LOG_LEVEL)[keyof typeof LOG_LEVEL]) || LOG_LEVEL.INFO
+const LOG_LEVEL_CONFIG = (process.env.LOG_LEVEL as LOG_LEVEL) || LOG_LEVEL.INFO
 const isTestEnv = CURRENT_ENV === ENVIRONMENT.TEST
 const isProductionEnv = CURRENT_ENV === ENVIRONMENT.PRODUCTION
 const ENABLE_CALLER_TRACKING = !isProductionEnv
@@ -50,7 +40,7 @@ const ENABLE_CALLER_TRACKING = !isProductionEnv
 const STACK_REGEX = /\((.*):(\d+):(\d+)\)|at\s+(.*):(\d+):(\d+)/
 const currentFileName = path.basename(__filename)
 
-const COLOR = {
+export const COLOR = {
   CYAN: '\x1b[36m',
   RED: '\x1b[31m',
   GREEN: '\x1b[32m',
@@ -60,7 +50,7 @@ const COLOR = {
   BLUE: '\x1b[34m',
 } as const
 
-const COLOR_BY_LEVEL: Record<(typeof LOG_LEVEL)[keyof typeof LOG_LEVEL], string> = {
+const COLOR_BY_LEVEL: Record<LOG_LEVEL, string> = {
   [LOG_LEVEL.ERROR]: COLOR.RED,
   [LOG_LEVEL.WARN]: COLOR.YELLOW,
   [LOG_LEVEL.INFO]: COLOR.GREEN,
@@ -76,7 +66,8 @@ const COLOR_BY_LEVEL: Record<(typeof LOG_LEVEL)[keyof typeof LOG_LEVEL], string>
 const shouldSkipFrame = (line: string): boolean =>
   line.includes('node_modules') || line.includes(currentFileName)
 
-const colorizeText = (text: string, color: string): string => `${color}${text}${COLOR.RESET}`
+export const colorizeText = (text: string, color: string): string =>
+  `${color}${text}${COLOR.RESET}`
 
 /**
  * Get caller information from stack trace
@@ -104,7 +95,8 @@ function getCallerInfo(): CallerInfo | null {
 
     const pathParts = relativePath.split(path.sep)
     const fileName = pathParts[pathParts.length - 1]
-    const parentDir = pathParts.length > 1 ? pathParts[pathParts.length - 2] : ''
+    const parentDir =
+      pathParts.length > 1 ? pathParts[pathParts.length - 2] : ''
 
     const displayPath = parentDir ? `${parentDir}/${fileName}` : fileName
 
@@ -134,8 +126,8 @@ function formatArgument(arg: any): string {
 /**
  * Get console log level based on environment
  */
-function getConsoleLogLevel(env: ENVIRONMENT_TYPE): LOG_LEVEL_TYPE {
-  const levelMap: Record<ENVIRONMENT_TYPE, LOG_LEVEL_TYPE> = {
+function getConsoleLogLevel(env: ENVIRONMENT): LOG_LEVEL {
+  const levelMap: Record<ENVIRONMENT, LOG_LEVEL> = {
     [ENVIRONMENT.PRODUCTION]: LOG_LEVEL.INFO,
     [ENVIRONMENT.DEVELOPMENT]: LOG_LEVEL.DEBUG,
     [ENVIRONMENT.STAGING]: LOG_LEVEL.VERBOSE,
@@ -147,8 +139,8 @@ function getConsoleLogLevel(env: ENVIRONMENT_TYPE): LOG_LEVEL_TYPE {
 /**
  * Get file log level based on environment
  */
-function getFileLogLevel(env: ENVIRONMENT_TYPE): LOG_LEVEL_TYPE {
-  const levelMap: Record<ENVIRONMENT_TYPE, LOG_LEVEL_TYPE> = {
+function getFileLogLevel(env: ENVIRONMENT): LOG_LEVEL {
+  const levelMap: Record<ENVIRONMENT, LOG_LEVEL> = {
     [ENVIRONMENT.PRODUCTION]: LOG_LEVEL.ERROR,
     [ENVIRONMENT.DEVELOPMENT]: LOG_LEVEL.DEBUG,
     [ENVIRONMENT.STAGING]: LOG_LEVEL.VERBOSE,
@@ -172,6 +164,19 @@ const callerFormat = winston.format((info) => {
 })
 
 /**
+ * Remove context from metadata before serialization
+ */
+const removeContextFormat = winston.format((info) => {
+  if (info.context && typeof info.context === 'string') {
+    if (!info.loggerContext) {
+      info.loggerContext = info.context
+    }
+    delete info.context
+  }
+  return info
+})
+
+/**
  * Handle util.format style arguments (%s, %d, etc.)
  */
 const splatFormat = winston.format((info) => {
@@ -182,6 +187,11 @@ const splatFormat = winston.format((info) => {
     info.message = formatArgument(info.message)
   }
   delete info[Symbol.for('splat') as any]
+
+  if (info.context) {
+    delete info.context
+  }
+
   return info
 })
 
@@ -215,7 +225,13 @@ export function setClsService(cls: ClsService): void {
 }
 
 const contextFormat = winston.format((info) => {
-  if (!clsService) return info
+  if (!clsService) {
+    if (info.context) {
+      info.loggerContext = info.context
+      delete info.context
+    }
+    return info
+  }
 
   try {
     const requestId = clsService.get<string>('requestId')
@@ -227,6 +243,12 @@ const contextFormat = winston.format((info) => {
     // Ignore context errors in async operations
   }
 
+  // Add logger context if available and remove from metadata
+  if (info.context) {
+    info.loggerContext = info.context
+    delete info.context
+  }
+
   return info
 })
 
@@ -236,7 +258,7 @@ const contextFormat = winston.format((info) => {
 const consoleFormat = winston.format.printf((info: any) => {
   const level = colorizeText(
     info.level.toUpperCase().padEnd(5),
-    COLOR_BY_LEVEL[info.level as LOG_LEVEL_TYPE] || COLOR.RESET
+    COLOR_BY_LEVEL[info.level as LOG_LEVEL] || COLOR.RESET
   )
 
   const timestamp = colorizeText(info.timestamp, COLOR.GRAY)
@@ -244,28 +266,40 @@ const consoleFormat = winston.format.printf((info: any) => {
 
   const callerInfo =
     info.caller && info.level !== LOG_LEVEL.HTTP
-      ? colorizeText(`(${info.caller.file}:${info.caller.line})`, COLOR.GRAY) + ' '
+      ? colorizeText(`(${info.caller.file}:${info.caller.line})`, COLOR.GRAY) +
+        ' '
       : ''
 
   const contextInfo = []
   if (info.requestId) contextInfo.push(`[${info.requestId}]`)
   if (info.userId) contextInfo.push(`[user:${info.userId}]`)
   const context =
-    contextInfo.length > 0 ? colorizeText(contextInfo.join(' '), COLOR.BLUE) + ' ' : ''
+    contextInfo.length > 0
+      ? colorizeText(contextInfo.join(' '), COLOR.BLUE) + ' '
+      : ''
+
+  // Append logger context vào cuối message nếu có
+  const messageWithContext = info.loggerContext
+    ? `${info.message} ${colorizeText(`(${info.loggerContext})`, COLOR.GRAY)}`
+    : info.message
 
   const stackTrace =
     info.stack && info.level !== LOG_LEVEL.HTTP
       ? '\n' + colorizeText(info.stack as string, COLOR.RED)
       : ''
 
-  return `[${timestamp} ${level}] ${context}${callerInfo}${info.message} ${ms}${stackTrace}`
+  return `[${timestamp} ${level}] ${context}${callerInfo}${messageWithContext} ${ms}${stackTrace}`
 })
 
 /**
- * File format - remove caller to reduce size
+ * File format - remove caller and context metadata to reduce size
  */
 const fileFormat = winston.format((info) => {
-  const { caller: _caller, ms: _ms, ...rest } = info
+  const { caller: _caller, ms: _ms, context: _context, ...rest } = info
+  // Append context vào message nếu có loggerContext
+  if (info.loggerContext) {
+    rest.message = `${rest.message} (${info.loggerContext})`
+  }
   return rest
 })
 
@@ -276,11 +310,16 @@ const fileFormat = winston.format((info) => {
 const commonFormats = [
   errorFormat(),
   contextFormat(),
+  removeContextFormat(), // Remove context from metadata before serialization
   ...(ENABLE_CALLER_TRACKING ? [callerFormat()] : []),
   splatFormat(),
   winston.format.ms(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
 ]
+
+const combinedFileLevel = ENABLE_TRACE_FILE
+  ? LOG_LEVEL.HTTP
+  : getConsoleLogLevel(CURRENT_ENV as ENVIRONMENT)
 
 export const winstonLogger = winston.createLogger({
   silent: isTestEnv,
@@ -290,7 +329,7 @@ export const winstonLogger = winston.createLogger({
     new winston.transports.DailyRotateFile({
       filename: '%DATE%-error.log',
       dirname: path.join(process.cwd(), 'logs'),
-      level: getFileLogLevel(CURRENT_ENV as ENVIRONMENT_TYPE),
+      level: getFileLogLevel(CURRENT_ENV as ENVIRONMENT),
       format: winston.format.combine(fileFormat(), winston.format.json()),
       datePattern: 'DD-MM-YYYY',
       maxFiles: '7d',
@@ -299,7 +338,7 @@ export const winstonLogger = winston.createLogger({
     new winston.transports.DailyRotateFile({
       filename: '%DATE%-combined.log',
       dirname: path.join(process.cwd(), 'logs'),
-      level: getConsoleLogLevel(CURRENT_ENV as ENVIRONMENT_TYPE),
+      level: combinedFileLevel, // TODO: Add realtime enable/disable trace file
       format: winston.format.combine(fileFormat(), winston.format.json()),
       datePattern: 'DD-MM-YYYY',
       maxFiles: '14d',
@@ -307,7 +346,7 @@ export const winstonLogger = winston.createLogger({
     }),
     new winston.transports.Console({
       silent: isTestEnv,
-      level: getConsoleLogLevel(CURRENT_ENV as ENVIRONMENT_TYPE),
+      level: getConsoleLogLevel(CURRENT_ENV as ENVIRONMENT),
       stderrLevels: [LOG_LEVEL.ERROR],
       format: consoleFormat,
     }),

@@ -1,5 +1,3 @@
-import { Schema } from 'mongoose'
-
 import { Schema as NSchema, Prop, SchemaFactory } from '@nestjs/mongoose'
 import { ApiHideProperty } from '@nestjs/swagger'
 

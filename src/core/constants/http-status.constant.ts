@@ -8,17 +8,33 @@ export const HTTP_STATUS = {
   UNAUTHORIZED: { code: 401, message: 'Unauthorized', key: 'UNAUTHORIZED' },
   FORBIDDEN: { code: 403, message: 'Forbidden', key: 'FORBIDDEN' },
   NOT_FOUND: { code: 404, message: 'Not Found', key: 'NOT_FOUND' },
-  REQUEST_TIMEOUT: { code: 408, message: 'Request Timeout', key: 'REQUEST_TIMEOUT' },
+  REQUEST_TIMEOUT: {
+    code: 408,
+    message: 'Request Timeout',
+    key: 'REQUEST_TIMEOUT',
+  },
   CONFLICT: { code: 409, message: 'Conflict', key: 'CONFLICT' },
-  UNPROCESSABLE_ENTITY: { code: 422, message: 'Unprocessable Entity', key: 'UNPROCESSABLE_ENTITY' },
-  TOO_MANY_REQUESTS: { code: 429, message: 'Too Many Requests', key: 'TOO_MANY_REQUESTS' },
+  UNPROCESSABLE_ENTITY: {
+    code: 422,
+    message: 'Unprocessable Entity',
+    key: 'UNPROCESSABLE_ENTITY',
+  },
+  TOO_MANY_REQUESTS: {
+    code: 429,
+    message: 'Too Many Requests',
+    key: 'TOO_MANY_REQUESTS',
+  },
 
   INTERNAL_SERVER_ERROR: {
     code: 500,
     message: 'Internal Server Error',
     key: 'INTERNAL_SERVER_ERROR',
   },
-  SERVICE_UNAVAILABLE: { code: 503, message: 'Service Unavailable', key: 'SERVICE_UNAVAILABLE' },
+  SERVICE_UNAVAILABLE: {
+    code: 503,
+    message: 'Service Unavailable',
+    key: 'SERVICE_UNAVAILABLE',
+  },
 } as const
 
 // Helper nếu thực sự cần

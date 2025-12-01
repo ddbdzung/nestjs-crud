@@ -2,17 +2,24 @@ import { ClsService } from 'nestjs-cls'
 import { Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
 
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common'
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+} from '@nestjs/common'
 
 import { AppLogger } from './logger.service'
 
 @Injectable()
 export class HttpLoggerInterceptor implements NestInterceptor {
-  constructor(
-    private readonly logger: AppLogger,
-    private readonly cls: ClsService
-  ) {
-    this.logger.setContext('HTTP')
+  private readonly logger: AppLogger
+  private readonly cls: ClsService
+
+  constructor(cls: ClsService) {
+    // Tự động set context từ class name
+    this.cls = cls
+    this.logger = AppLogger.create(cls, HttpLoggerInterceptor.name)
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
@@ -53,7 +60,7 @@ export class HttpLoggerInterceptor implements NestInterceptor {
 
           this.logger.error(
             `← ${method} ${url} ${statusCode} ${duration}ms - ${error.message}`,
-            error.stack
+            error instanceof Error ? error : new Error(String(error))
           )
         },
       })

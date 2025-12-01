@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 import path from 'path'
 
+import { FastifyCorsOptions } from '@fastify/cors'
 import * as customEnv from 'custom-env'
 import * as ip from 'ip'
 import ms from 'ms'
 
 import { Injectable } from '@nestjs/common'
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface'
 
 import { CURRENT_ENV, ENVIRONMENT } from '@core'
 
@@ -35,6 +35,7 @@ export class ConfigService {
   isStaging = () => CURRENT_ENV === this.STAGING
 
   NODE_ENV = env.NODE_ENV
+  MODULE_ALIAS = env.MODULE_ALIAS || 'rental'
   PAGINATION_PAGE_SIZE = parseInt(env.PAGINATION_PAGE_SIZE ?? '100', 10)
   UPLOAD_MAX_SIZE = parseInt(env.UPLOAD_MAX_SIZE ?? '1024', 10) * 1024 * 5 // 5MB
   DOMAIN = this.isProd() ? '127.0.0.1' : '127.0.0.1'
@@ -60,7 +61,9 @@ export class ConfigService {
   REDIS_PORT = parseInt(env.REDIS_PORT ?? '6379', 10)
   REDIS_PASSWORD = env.REDIS_PASSWORD
   REDIS_URI = env.REDIS_URI ?? generateRedisURI(this)
-  REDIS_KEY_PREFIX = [env.REDIS_KEY_PREFIX ?? 'RENTAL', this.NODE_ENV, ''].join('_')
+  REDIS_KEY_PREFIX = [env.REDIS_KEY_PREFIX ?? 'RENTAL', this.NODE_ENV, ''].join(
+    '_'
+  )
   readonly REDIS_STORAGE = {
     COMMON: 0,
     DB: 1,
@@ -76,13 +79,14 @@ export class ConfigService {
   CACHE_TIMEOUT = ms('1d')
   CACHE_LONG_TIMEOUT = ms('30d')
 
-  readonly CORS: CorsOptions = {
+  readonly CORS: FastifyCorsOptions = {
     origin: '*',
     credentials: true,
     methods: ['POST', 'PUT', 'GET', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders:
       'content-type, authorization, accept-encoding, user-agent, accept, cache-control, connection, cookie, ref-token, x-socket-client-id',
-    exposedHeaders: 'X-RateLimit-Reset, Retry-After, set-cookie, Content-Disposition, X-File-Name',
+    exposedHeaders:
+      'X-RateLimit-Reset, Retry-After, set-cookie, Content-Disposition, X-File-Name',
   } as const
 
   // Swagger/API Documentation
@@ -93,6 +97,45 @@ export class ConfigService {
     SUPPORT: {
       URL: env.SUPPORT_URL || 'https://github.com',
       EMAIL: env.SUPPORT_EMAIL || 'support@example.com',
+    },
+  } as const
+
+  SWAGGER_CREDENTIAL_NAME = env.SWAGGER_CREDENTIAL_NAME
+  SWAGGER_CREDENTIAL_PASS = env.SWAGGER_CREDENTIAL_PASS
+
+  readonly RATE_LIMIT = {
+    global: true, // Apply rate limiting to all routes by default
+    windowMs: 60 * 1000, // Deprecated for fastify, keeping for backward compatibility
+    timeWindow: parseInt(env.RATE_LIMIT_WINDOW ?? '60', 10) * 1000 || 60 * 1000, // @fastify/rate-limit uses timeWindow (in milliseconds)
+    max: parseInt(env.RATE_LIMIT_MAX ?? '100', 10),
+    nameSpace: env.REDIS_RATE_LIMIT_NAMESPACE ?? ':rate-limit:',
+    redis: null, // Will be initialized in main.ts with actual Redis client
+    skipOnError: true, // Skip rate limiting if Redis is down to prevent API failures
+    continueExceeding: false, // Don't renew limitation when user exceeds
+    // onExceeding: function(req, key) {
+    //   console.log(`[RATE LIMIT] Request from ${key} is approaching limit`);
+    // },
+    // onExceeded: function(req, key) {
+    //   console.log(`[RATE LIMIT] Request from ${key} has exceeded the limit`);
+    // },
+    keyGenerator: function (req: any) {
+      return req.headers['authorization']?.split(' ')[1] || req.ip
+    },
+    addHeaders: {
+      'x-ratelimit-limit': true,
+      'x-ratelimit-remaining': true,
+      'x-ratelimit-reset': true,
+      'retry-after': true,
+    },
+    allowList: (req: any, _key: any) => {
+      const url = (req.url ?? '') as string
+
+      const staticPrefixes = [
+        `/api/${this.MODULE_ALIAS}`,
+        `/api/admin/${this.MODULE_ALIAS}`,
+      ]
+
+      return staticPrefixes.some((p) => url.startsWith(p))
     },
   } as const
 }

@@ -12,4 +12,9 @@ export * from './services/base-delete.service'
 export * from './services/base.service'
 
 // Export api.schemas with explicit names to avoid conflicts
-export { Payload, PaginatedMeta, PaginatedResult, defaultPayload } from './api.schemas'
+export {
+  Payload,
+  PaginatedMeta,
+  PaginatedResult,
+  defaultPayload,
+} from './api.schemas'

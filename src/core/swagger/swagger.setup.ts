@@ -6,8 +6,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { config } from '@config'
 
 const CREDENTIAL = {
-  name: 'dev',
-  pass: 'SMAX@2023',
+  name: config.SWAGGER_CREDENTIAL_NAME,
+  pass: config.SWAGGER_CREDENTIAL_PASS,
 }
 
 export function initSwagger(app: INestApplication) {
@@ -31,35 +31,43 @@ export function initSwagger(app: INestApplication) {
   const document = SwaggerModule.createDocument(app, configSwagger)
 
   const httpAdapter = app.getHttpAdapter()
-  httpAdapter.use('/apidoc', (req: Request, res: Response, next: NextFunction) => {
-    function parseAuthHeader(input: string): { name: string; pass: string } {
-      if (!input) return { name: '', pass: '' }
+  httpAdapter.use(
+    '/apidoc',
+    (req: Request, res: Response, next: NextFunction) => {
+      function parseAuthHeader(input: string): { name: string; pass: string } {
+        if (!input) return { name: '', pass: '' }
 
-      const base64Part = input.split(' ').pop()
-      if (!base64Part) return { name: '', pass: '' }
+        const base64Part = input.split(' ').pop()
+        if (!base64Part) return { name: '', pass: '' }
 
-      const [name, pass] = Buffer.from(base64Part, 'base64').toString('ascii').split(':')
-      return { name: name || '', pass: pass || '' }
-    }
-
-    function unauthorizedResponse(): void {
-      if (httpAdapter.getType() === 'fastify') {
-        res.statusCode = 401
-        res.setHeader('WWW-Authenticate', 'Basic')
-      } else {
-        res.status(401)
-        res.set('WWW-Authenticate', 'Basic')
+        const [name, pass] = Buffer.from(base64Part, 'base64')
+          .toString('ascii')
+          .split(':')
+        return { name: name || '', pass: pass || '' }
       }
+
+      function unauthorizedResponse(): void {
+        if (httpAdapter.getType() === 'fastify') {
+          res.statusCode = 401
+          res.setHeader('WWW-Authenticate', 'Basic')
+        } else {
+          res.status(401)
+          res.set('WWW-Authenticate', 'Basic')
+        }
+        next()
+      }
+
+      const credentials = parseAuthHeader(req.headers.authorization || '')
+      if (
+        credentials?.name !== CREDENTIAL.name ||
+        credentials?.pass !== CREDENTIAL.pass
+      ) {
+        return unauthorizedResponse()
+      }
+
       next()
     }
-
-    const credentials = parseAuthHeader(req.headers.authorization || '')
-    if (credentials?.name !== CREDENTIAL.name || credentials?.pass !== CREDENTIAL.pass) {
-      return unauthorizedResponse()
-    }
-
-    next()
-  })
+  )
   SwaggerModule.setup('/apidoc', app, document, {
     customSiteTitle: (SR.PRODUCT_NAME || 'API') + ' API Docs',
     customCss: '.swagger-ui .topbar { display: none }',

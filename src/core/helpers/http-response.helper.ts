@@ -6,7 +6,9 @@ import { HTTP_STATUS } from '../constants/http-status.constant'
  * @type T - The type of the data
  * @type K - The type of the metadata
  */
-export class HttpResponse<T = any, K = Record<string, any>> implements IThrowable {
+export class HttpResponse<T = any, K = Record<string, any>>
+  implements IThrowable
+{
   protected success: boolean
   protected timestamp: Date
 

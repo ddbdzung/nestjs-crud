@@ -1,5 +1,8 @@
 // import { ERROR_MESSAGES } from '@shared'
-import { HttpStatus, ValidationError as NestValidationError } from '@nestjs/common'
+import {
+  HttpStatus,
+  ValidationError as NestValidationError,
+} from '@nestjs/common'
 
 import { BaseError } from '../helpers/error.helper'
 
@@ -44,7 +47,10 @@ export const ALL_MESSAGES: Record<string, string> = {
 // const ALL_ERROR_CODES = Object.keys(ALL_MESSAGES);
 
 export class ValidationError extends BaseError {
-  constructor(validationErrors: NestValidationError[], message = ALL_MESSAGES[VALIDATION]) {
+  constructor(
+    validationErrors: NestValidationError[],
+    message = ALL_MESSAGES[VALIDATION]
+  ) {
     super(message, {
       statusCode: HttpStatus.BAD_REQUEST,
       errorCode: VALIDATION,

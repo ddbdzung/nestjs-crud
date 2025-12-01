@@ -69,7 +69,8 @@ export function NestSchema(options?: NestSchemaOptions) {
             }
           })
 
-          const excludesOnPopulate = options?.excludesOnPopulate ?? defaultExcludeOnPopulate(ret)
+          const excludesOnPopulate =
+            options?.excludesOnPopulate ?? defaultExcludeOnPopulate(ret)
           excludesOnPopulate
             .concat(options?.extendExcludesOnPopulate ?? [])
             .forEach((key: string) => {
@@ -86,6 +87,11 @@ export function NestSchema(options?: NestSchemaOptions) {
   )
 }
 
-export const EnumColumn = (options: PropOptions & { enum: JsonObject; isRequired?: boolean }) => {
-  return applyDecorators(ApiProperty(enumProperty({ enum: options.enum })), Prop(options))
+export const EnumColumn = (
+  options: PropOptions & { enum: JsonObject; isRequired?: boolean }
+) => {
+  return applyDecorators(
+    ApiProperty(enumProperty({ enum: options.enum })),
+    Prop(options)
+  )
 }

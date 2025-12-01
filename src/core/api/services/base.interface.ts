@@ -19,14 +19,14 @@ export interface IServiceOptions {
 
 export interface IExtraOptions {
   skipThrow?: boolean
-  extraData?: Record<string, any>
   user?: IAccountAuth
   skipCache?: boolean
-  updateOne?: {
-    includeOldRecord: true // Sử dụng flag này khi cần lấy bản ghi cũ xử lý trong hook postUpdateOne,...
-  }
-  postCreateOrUpdate?: {
-    fullPopulation?: boolean // Lấy dữ liệu full-population bên cạnh task
-  } // Option: sau tạo hoặc cập nhật bản ghi
   socketClientId?: string // Client ID socket của view người thực hiện nếu có
+
+  // Query options
+  lean?: boolean // Trả về plain object thay vì Mongoose document (tăng performance)
+  select?: string | Record<string, number> // Chọn fields cụ thể (e.g. 'name email' hoặc { name: 1, email: 1 })
+
+  // Hook control
+  skipHooks?: boolean // Bỏ qua pre/post hooks (dùng cho bulk operations, migrations)
 }

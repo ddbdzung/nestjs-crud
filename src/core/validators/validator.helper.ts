@@ -1,5 +1,8 @@
 import { plainToInstance } from 'class-transformer'
-import { ValidationError as NestValidationError, validate } from 'class-validator'
+import {
+  ValidationError as NestValidationError,
+  validate,
+} from 'class-validator'
 
 import { BadRequestException, Type } from '@nestjs/common'
 
@@ -13,7 +16,11 @@ export function exceptionFactory(errors: NestValidationError[]) {
   return new BadRequestException(messages.join('; '))
 }
 
-export async function handleValidate(classDto: Type, input: any, isReject = true) {
+export async function handleValidate(
+  classDto: Type,
+  input: any,
+  isReject = true
+) {
   const dto = plainToInstance(classDto, input)
   const errors = await validate(dto, {
     whitelist: true,

@@ -1,5 +1,8 @@
 import { Type } from 'class-transformer'
-import { TypeHelpOptions, TypeOptions } from 'class-transformer/types/interfaces'
+import {
+  TypeHelpOptions,
+  TypeOptions,
+} from 'class-transformer/types/interfaces'
 import {
   IsInt,
   IsNumber,
@@ -13,7 +16,10 @@ import {
 
 import { applyDecorators } from '@nestjs/common'
 
-export function GreaterThan(property: string, validationOptions?: ValidationOptions) {
+export function GreaterThan(
+  property: string,
+  validationOptions?: ValidationOptions
+) {
   return function (object: Record<string, any>, propertyName: string) {
     registerDecorator({
       name: 'GreaterThan',
@@ -23,7 +29,10 @@ export function GreaterThan(property: string, validationOptions?: ValidationOpti
       options: validationOptions,
       validator: {
         validate(propertyValue: number, args: ValidationArguments) {
-          return propertyValue > args.object[args.constraints[0] as keyof typeof args.object]
+          return (
+            propertyValue >
+            args.object[args.constraints[0] as keyof typeof args.object]
+          )
         },
         defaultMessage(args: ValidationArguments) {
           return `"${args.property}" must be greater than "${String(args.constraints[0])}"`
@@ -33,7 +42,10 @@ export function GreaterThan(property: string, validationOptions?: ValidationOpti
   }
 }
 
-export function GreaterThanOrEqual(property: string, validationOptions?: ValidationOptions) {
+export function GreaterThanOrEqual(
+  property: string,
+  validationOptions?: ValidationOptions
+) {
   return function (object: Record<string, any>, propertyName: string) {
     registerDecorator({
       name: 'GreaterThanOrEqual',
@@ -43,7 +55,10 @@ export function GreaterThanOrEqual(property: string, validationOptions?: Validat
       options: validationOptions,
       validator: {
         validate(propertyValue: number, args: ValidationArguments) {
-          return propertyValue >= args.object[args.constraints[0] as keyof typeof args.object]
+          return (
+            propertyValue >=
+            args.object[args.constraints[0] as keyof typeof args.object]
+          )
         },
         defaultMessage(args: ValidationArguments) {
           return `"${args.property}" must be greater than or equal to "${String(args.constraints[0])}"`
@@ -54,7 +69,10 @@ export function GreaterThanOrEqual(property: string, validationOptions?: Validat
 }
 
 export function IsIntPositive(validationOptions?: ValidationOptions) {
-  return applyDecorators(IsPositive(validationOptions), IsInt(validationOptions))
+  return applyDecorators(
+    IsPositive(validationOptions),
+    IsInt(validationOptions)
+  )
 }
 
 export function IsIntNatural(validationOptions?: ValidationOptions) {
@@ -77,7 +95,10 @@ export function IsNumberOrString(validationOptions?: ValidationOptions) {
       options: validationOptions,
       validator: {
         validate(propertyValue: any, _args: ValidationArguments) {
-          return typeof propertyValue === 'number' || typeof propertyValue === 'string'
+          return (
+            typeof propertyValue === 'number' ||
+            typeof propertyValue === 'string'
+          )
         },
         defaultMessage(args: ValidationArguments) {
           return `${args.property} must be number or string`
@@ -92,7 +113,10 @@ export function NestedType(
   validationOptions?: ValidationOptions,
   options?: TypeOptions
 ) {
-  return applyDecorators(ValidateNested(validationOptions), Type(typeFunction, options))
+  return applyDecorators(
+    ValidateNested(validationOptions),
+    Type(typeFunction, options)
+  )
 }
 
 /**
@@ -141,7 +165,8 @@ export function ClassValidator<T = any>(options: {
   }
 
   return function (target: any) {
-    const currentValidators = Reflect.getMetadata('class-validator', target) || []
+    const currentValidators =
+      Reflect.getMetadata('class-validator', target) || []
     const currentMetadata = {
       validator: options.validator,
       validatorAsync: options.validatorAsync,

@@ -4,11 +4,14 @@ import { Document, FilterQuery } from 'mongoose'
 import { BaseCreateOrUpdateService } from './base-create-or-update.service'
 import { IExtraOptions } from './base.interface'
 
-export class BaseDeleteService<TDoc extends Document> extends BaseCreateOrUpdateService<TDoc> {
-  // model is inherited from BaseGenericService
-
+export class BaseDeleteService<
+  TDoc extends Document,
+> extends BaseCreateOrUpdateService<TDoc> {
   /* Delete */
-  protected async preDeleteOne(_filter: FilterQuery<Partial<TDoc>>, _extraOptions?: IExtraOptions) {
+  protected async preDeleteOne(
+    _filter: FilterQuery<Partial<TDoc>>,
+    _extraOptions?: IExtraOptions
+  ) {
     /* */
   }
 
@@ -20,13 +23,23 @@ export class BaseDeleteService<TDoc extends Document> extends BaseCreateOrUpdate
     return record
   }
 
-  async deleteOneBy(filter: FilterQuery<Partial<TDoc>>, extraOptions: IExtraOptions = {}) {
-    await this.preDeleteOne(filter, extraOptions)
+  async deleteOneBy(
+    filter: FilterQuery<Partial<TDoc>>,
+    extraOptions: IExtraOptions = {}
+  ) {
+    if (!extraOptions.skipHooks) {
+      await this.preDeleteOne(filter, extraOptions)
+    }
     const deleted = await this.model.findOneAndDelete(filter)
-    return this.postDeleteOne(deleted, filter, extraOptions)
+    return extraOptions.skipHooks
+      ? deleted
+      : this.postDeleteOne(deleted, filter, extraOptions)
   }
 
-  protected async preDeleteBy(_filter: FilterQuery<Partial<TDoc>>, _extraOptions?: IExtraOptions) {
+  protected async preDeleteBy(
+    _filter: FilterQuery<Partial<TDoc>>,
+    _extraOptions?: IExtraOptions
+  ) {
     /* */
   }
 
@@ -38,9 +51,16 @@ export class BaseDeleteService<TDoc extends Document> extends BaseCreateOrUpdate
     return deleteResult
   }
 
-  async deleteBy(filter: FilterQuery<Partial<TDoc>>, extraOptions: IExtraOptions = {}) {
-    await this.preDeleteBy(filter, extraOptions)
+  async deleteBy(
+    filter: FilterQuery<Partial<TDoc>>,
+    extraOptions: IExtraOptions = {}
+  ): Promise<DeleteResult> {
+    if (!extraOptions.skipHooks) {
+      await this.preDeleteBy(filter, extraOptions)
+    }
     const deleteResult = await this.model.deleteMany(filter)
-    return await this.postDeleteBy(deleteResult, filter, extraOptions)
+    return extraOptions.skipHooks
+      ? deleteResult
+      : await this.postDeleteBy(deleteResult, filter, extraOptions)
   }
 }

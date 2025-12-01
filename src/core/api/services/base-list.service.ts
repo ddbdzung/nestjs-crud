@@ -1,21 +1,44 @@
 import _ from 'lodash'
-import { Document, FilterQuery, PopulateOption, ProjectionType, QueryOptions } from 'mongoose'
+import {
+  Document,
+  FilterQuery,
+  PopulateOption,
+  ProjectionType,
+  QueryOptions,
+} from 'mongoose'
 
 import { isUndefined } from '@nestjs/common/utils/shared.utils'
 
 import { PaginatedResult } from '../api.schemas'
 import { IExtraOptions } from '../index'
-import { PaginationDto, QuerySpecificationDto } from '../query-specification.dto'
+import {
+  PaginationDto,
+  QuerySpecificationDto,
+} from '../query-specification.dto'
 import { BaseGenericService } from './base-generic.service'
 
-export class BaseListService<TDoc extends Document> extends BaseGenericService<TDoc> {
+export class BaseListService<
+  TDoc extends Document,
+> extends BaseGenericService<TDoc> {
   /* List */
   async list(query?: QuerySpecificationDto, extraOptions?: IExtraOptions) {
-    const { filter, projection, options } = await this.preFindAll(query, extraOptions)
+    const { filter, projection, options } = await this.preFindAll(
+      query,
+      extraOptions
+    )
     delete options.limit
     delete options.skip
     if (!options.sort) options.sort = { createdAt: -1 } // Default sort by createdAt if not specified
-    const data: TDoc[] = await this.model.find(filter, projection, options)
+
+    // Apply select từ extraOptions nếu có
+    const finalProjection = extraOptions?.select || projection
+
+    let dbQuery = this.model.find(filter, finalProjection, options)
+    if (extraOptions?.lean) {
+      dbQuery = dbQuery.lean() as any
+    }
+
+    const data: TDoc[] = await dbQuery
     return await this.postFindAll(data, query, extraOptions)
   }
 
@@ -23,12 +46,23 @@ export class BaseListService<TDoc extends Document> extends BaseGenericService<T
     query?: QuerySpecificationDto,
     extraOptions?: IExtraOptions
   ): Promise<PaginatedResult<TDoc>> {
-    const { filter, projection, options } = await this.preFindAll(query, extraOptions)
+    const { filter, projection, options } = await this.preFindAll(
+      query,
+      extraOptions
+    )
     const total = await this.model.countDocuments(filter)
 
     if (!options.sort) options.sort = { createdAt: -1 } // Default sort by createdAt if not specified
 
-    let data: TDoc[] = await this.model.find(filter, projection, options)
+    // Apply select từ extraOptions nếu có
+    const finalProjection = extraOptions?.select || projection
+
+    let dbQuery = this.model.find(filter, finalProjection, options)
+    if (extraOptions?.lean) {
+      dbQuery = dbQuery.lean() as any
+    }
+
+    let data: TDoc[] = await dbQuery
     data = await this.postFindAll(data, query, extraOptions)
     return new PaginatedResult(data, query || {}, { total })
   }
@@ -47,40 +81,46 @@ export class BaseListService<TDoc extends Document> extends BaseGenericService<T
     _extraOptions?: IExtraOptions
   ): FilterQuery<TDoc> {
     const { filter, q, searchFields } = query
-    const resultFilter: FilterQuery<TDoc> = (filter ? { ...filter } : {}) as FilterQuery<TDoc>
+    const resultFilter: FilterQuery<TDoc> = (
+      filter ? { ...filter } : {}
+    ) as FilterQuery<TDoc>
     if (filter) {
-      Object.entries(filter).forEach(([filterKey, filterValue]: [string, any]) => {
-        if (isUndefined(filterValue)) {
-          delete resultFilter[filterKey as keyof typeof resultFilter]
-          return
-        }
-
-        if (filterKey === 'id') {
-          ;(resultFilter as any)._id = filterValue
-          delete resultFilter[filterKey as keyof typeof resultFilter]
-        } else if (filterKey === 'ids') {
-          ;(resultFilter as any)._id = filterValue
-          delete resultFilter[filterKey as keyof typeof resultFilter]
-        } else if (filterKey.endsWith('Ids')) {
-          ;(resultFilter as Record<string, any>)[filterKey.replace(/Ids$/, 'Id')] = filterValue
-          delete (resultFilter as Record<string, any>)[filterKey]
-        } else if (
-          filterValue &&
-          typeof filterValue === 'object' &&
-          'fromDate' in filterValue &&
-          'toDate' in filterValue
-        ) {
-          // Handle DateTimeRangeDto objects (fromDate, toDate)
-          ;(resultFilter as any)[filterKey] = {
-            $gte: new Date(filterValue.fromDate as string | number | Date),
-            $lte: new Date(filterValue.toDate as string | number | Date),
+      Object.entries(filter).forEach(
+        ([filterKey, filterValue]: [string, any]) => {
+          if (isUndefined(filterValue)) {
+            delete resultFilter[filterKey as keyof typeof resultFilter]
+            return
           }
-        } else if (filterKey.includes('_')) {
-          this.processFilter(resultFilter, [filterKey, filterValue])
-        } else {
-          ;(resultFilter as any)[filterKey] = filterValue
+
+          if (filterKey === 'id') {
+            ;(resultFilter as any)._id = filterValue
+            delete resultFilter[filterKey as keyof typeof resultFilter]
+          } else if (filterKey === 'ids') {
+            ;(resultFilter as any)._id = filterValue
+            delete resultFilter[filterKey as keyof typeof resultFilter]
+          } else if (filterKey.endsWith('Ids')) {
+            ;(resultFilter as Record<string, any>)[
+              filterKey.replace(/Ids$/, 'Id')
+            ] = filterValue
+            delete (resultFilter as Record<string, any>)[filterKey]
+          } else if (
+            filterValue &&
+            typeof filterValue === 'object' &&
+            'fromDate' in filterValue &&
+            'toDate' in filterValue
+          ) {
+            // Handle DateTimeRangeDto objects (fromDate, toDate)
+            ;(resultFilter as any)[filterKey] = {
+              $gte: new Date(filterValue.fromDate as string | number | Date),
+              $lte: new Date(filterValue.toDate as string | number | Date),
+            }
+          } else if (filterKey.includes('_')) {
+            this.processFilter(resultFilter, [filterKey, filterValue])
+          } else {
+            ;(resultFilter as any)[filterKey] = filterValue
+          }
         }
-      })
+      )
     }
 
     if (q && searchFields?.length) {
@@ -94,11 +134,17 @@ export class BaseListService<TDoc extends Document> extends BaseGenericService<T
     return resultFilter
   }
 
-  protected getSort(query?: QuerySpecificationDto, _extraOptions?: IExtraOptions) {
+  protected getSort(
+    query?: QuerySpecificationDto,
+    _extraOptions?: IExtraOptions
+  ) {
     return query?.sort
   }
 
-  protected getPaginate(query?: QuerySpecificationDto, _extraOptions?: IExtraOptions) {
+  protected getPaginate(
+    query?: QuerySpecificationDto,
+    _extraOptions?: IExtraOptions
+  ) {
     return {
       limit: query?.limit,
       skip: PaginationDto.getSkip(query),
@@ -131,7 +177,10 @@ export class BaseListService<TDoc extends Document> extends BaseGenericService<T
     return {}
   }
 
-  protected async preFindAll(query?: QuerySpecificationDto, extraOptions?: IExtraOptions) {
+  protected async preFindAll(
+    query?: QuerySpecificationDto,
+    extraOptions?: IExtraOptions
+  ) {
     return {
       filter: this.getFilter(query, extraOptions),
       projection: this.getProjection(query, extraOptions),

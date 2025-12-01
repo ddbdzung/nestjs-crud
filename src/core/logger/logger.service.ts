@@ -1,81 +1,165 @@
 import { ClsService } from 'nestjs-cls'
 
-import { Injectable, LoggerService, Scope } from '@nestjs/common'
+import {
+  Inject,
+  Injectable,
+  LoggerService,
+  Optional,
+  Scope,
+} from '@nestjs/common'
 
-import { LogMetadata, setClsService, winstonLogger } from './logger.config'
+import { setClsService, winstonLogger } from './logger.config'
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class AppLogger implements LoggerService {
-  private context?: string
-  private isClsServiceSet = false
+  private readonly context: string
+  private static isClsServiceSet = false
 
-  constructor(private readonly cls?: ClsService) {
-    // Inject ClsService vào winston config
-    if (cls && !this.isClsServiceSet) {
-      setClsService(cls)
-      this.isClsServiceSet = true
+  /**
+   * Constructor cho NestJS DI - nhận context trong constructor
+   * @param cls - ClsService (optional, sẽ được inject tự động)
+   * @param context - Context name (optional, nếu không có sẽ dùng 'AppLogger')
+   */
+  constructor(
+    @Optional() @Inject(ClsService) private readonly cls?: ClsService,
+    @Optional() @Inject('LOGGER_CONTEXT') context?: string
+  ) {
+    // Inject ClsService vào winston config (chỉ set một lần)
+    if (this.cls && !AppLogger.isClsServiceSet) {
+      setClsService(this.cls)
+      AppLogger.isClsServiceSet = true
     }
+
+    // Set context từ parameter hoặc default
+    this.context = context || 'AppLogger'
   }
 
   /**
-   * Set context name (thường là tên Class)
+   * Static factory method để tạo logger với context tự động từ class name
+   * Sử dụng khi tạo instance mới: AppLogger.create(cls, MyClass)
    */
-  setContext(context: string): void {
-    this.context = context
+  static create(
+    cls: ClsService,
+    context: string | (new (...args: any[]) => any)
+  ): AppLogger {
+    const contextName =
+      typeof context === 'string' ? context : context.name || 'Unknown'
+    return new AppLogger(cls, contextName)
   }
 
   /**
-   * Format message với context
+   * Log với context tự động
    */
-  private formatMessage(message: any, context?: string): string {
-    const ctx = context || this.context
-    return ctx ? `[${ctx}] ${message}` : message
-  }
+  private logWithContext(
+    level: 'info' | 'error' | 'warn' | 'debug' | 'verbose' | 'http',
+    ...args: any[]
+  ): void {
+    const [firstArg, ...restArgs] = args
 
-  /**
-   * Log info level
-   */
-  log(message: any, context?: string): void {
-    winstonLogger.info(this.formatMessage(message, context))
-  }
+    // Xử lý error với metadata object
+    if (
+      level === 'error' &&
+      restArgs.length > 0 &&
+      typeof restArgs[0] === 'object' &&
+      restArgs[0] !== null
+    ) {
+      const meta = restArgs[0] as Record<string, any>
+      winstonLogger[level](firstArg, {
+        context: this.context,
+        ...meta,
+      })
+      return
+    }
 
-  /**
-   * Log error level
-   */
-  error(message: any, trace?: string, context?: string): void {
-    if (trace) {
-      winstonLogger.error(this.formatMessage(message, context), { stack: trace })
+    // Xử lý HTTP với metadata
+    if (
+      level === 'http' &&
+      restArgs.length > 0 &&
+      typeof restArgs[0] === 'object' &&
+      restArgs[0] !== null
+    ) {
+      const meta = restArgs[0] as Record<string, any>
+      winstonLogger[level](firstArg, {
+        context: this.context,
+        ...meta,
+      })
+      return
+    }
+
+    // Xử lý các log level khác
+    if (restArgs.length > 0) {
+      // Nếu restArgs[0] là object, merge vào metadata
+      if (
+        typeof restArgs[0] === 'object' &&
+        restArgs[0] !== null &&
+        !Array.isArray(restArgs[0])
+      ) {
+        winstonLogger[level](firstArg, {
+          context: this.context,
+          ...restArgs[0],
+        })
+      } else {
+        // Format như util.format với context trong metadata
+        winstonLogger[level](firstArg, {
+          context: this.context,
+          [Symbol.for('splat')]: restArgs,
+        })
+      }
     } else {
-      winstonLogger.error(this.formatMessage(message, context))
+      // Chỉ có message - vẫn truyền context qua metadata
+      winstonLogger[level](firstArg, {
+        context: this.context,
+      })
     }
   }
 
-  /**
-   * Log warning level
-   */
-  warn(message: any, context?: string): void {
-    winstonLogger.warn(this.formatMessage(message, context))
+  log(...args: any[]): void {
+    this.logWithContext('info', ...args)
+  }
+
+  info(...args: any[]): void {
+    this.logWithContext('info', ...args)
   }
 
   /**
-   * Log debug level
+   * Log error với format chuẩn
+   * @param message - Error message
+   * @param error - Error object hoặc stack trace string (optional)
+   * @param meta - Additional metadata (optional)
    */
-  debug(message: any, context?: string): void {
-    winstonLogger.debug(this.formatMessage(message, context))
+  error(
+    message: any,
+    error?: Error | string,
+    meta?: Record<string, any>
+  ): void {
+    if (error) {
+      const stack = error instanceof Error ? error.stack : error
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
+      this.logWithContext('error', message, {
+        error: errorMessage,
+        stack,
+        ...meta,
+      })
+    } else {
+      this.logWithContext('error', message, meta)
+    }
   }
 
-  /**
-   * Log verbose level
-   */
-  verbose(message: any, context?: string): void {
-    winstonLogger.verbose(this.formatMessage(message, context))
+  warn(...args: any[]): void {
+    this.logWithContext('warn', ...args)
   }
 
-  /**
-   * Log HTTP requests (không format với context)
-   */
-  http(message: any, meta?: LogMetadata): void {
-    winstonLogger.http(message, meta)
+  debug(...args: any[]): void {
+    this.logWithContext('debug', ...args)
+  }
+
+  verbose(...args: any[]): void {
+    this.logWithContext('verbose', ...args)
+  }
+
+  http(...args: any[]): void {
+    this.logWithContext('http', ...args)
   }
 
   /**

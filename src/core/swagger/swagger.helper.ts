@@ -1,7 +1,11 @@
 import 'reflect-metadata'
 
 import { Type } from '@nestjs/common'
-import { OmitType as BaseOmitType, PickType as BasePickType, PartialType } from '@nestjs/swagger'
+import {
+  OmitType as BaseOmitType,
+  PickType as BasePickType,
+  PartialType,
+} from '@nestjs/swagger'
 
 /**
  * Copy metadata from parent class to child class

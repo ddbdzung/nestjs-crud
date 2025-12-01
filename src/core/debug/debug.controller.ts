@@ -4,14 +4,10 @@ import Debug from 'debug'
 import { Body, Controller, Get, Post } from '@nestjs/common'
 import { ApiPropertyOptional } from '@nestjs/swagger'
 
-import { config } from '@config'
-
-const debugNamespace: string = config.DEBUG_NAMESPACE || ''
-let isEnable = Boolean(debugNamespace)
-if (isEnable) Debug.enable(debugNamespace)
+import { ConfigService } from '@config'
 
 class SetDebugDto {
-  @ApiPropertyOptional({ default: debugNamespace })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   namespace?: string
@@ -19,27 +15,39 @@ class SetDebugDto {
 
 @Controller('debug')
 export class DebuggingController {
+  private readonly debugNamespace: string
+  private isEnable: boolean
+
+  constructor(private readonly configService: ConfigService) {
+    // Initialize khi controller được khởi tạo (sau khi DI hoàn tất)
+    this.debugNamespace = this.configService.DEBUG_NAMESPACE || ''
+    this.isEnable = Boolean(this.debugNamespace)
+    if (this.isEnable) {
+      Debug.enable(this.debugNamespace)
+    }
+  }
+
   @Get('status')
   async getStatus() {
-    isEnable = Debug.enabled(debugNamespace)
+    this.isEnable = Debug.enabled(this.debugNamespace)
     return {
-      isEnable,
-      defaultNameSpace: debugNamespace,
+      isEnable: this.isEnable,
+      defaultNameSpace: this.debugNamespace,
     }
   }
 
   @Post('set')
   async setDebug(@Body() body: SetDebugDto) {
     if (!body?.namespace) {
-      isEnable = false
+      this.isEnable = false
       Debug.disable()
     } else {
-      isEnable = true
+      this.isEnable = true
       Debug.enable(body.namespace)
     }
     return {
       body,
-      isEnable,
+      isEnable: this.isEnable,
       defaultNameSpace: body.namespace,
     }
   }

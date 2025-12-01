@@ -23,7 +23,7 @@ export class RedisClientExtend {
     protected readonly logger: AppLogger,
     protected readonly options: RedisOptions
   ) {
-    this.logger.setContext('Redis')
+    // Logger đã có context từ constructor, không cần setContext
     this.redisInstance = new Redis({
       host: config.REDIS_HOST,
       port: config.REDIS_PORT,
@@ -44,7 +44,7 @@ export class RedisClientExtend {
     this.store = combined
 
     this.redisInstance.on('error', (error: Error) => {
-      this.logger.error(`Redis error: ${error?.message}`, error?.stack)
+      this.logger.error(`Redis error: ${error?.message}`, error)
     })
 
     this.redisInstance.on('connect', () => {

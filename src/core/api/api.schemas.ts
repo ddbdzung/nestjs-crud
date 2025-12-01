@@ -74,7 +74,9 @@ export class PaginatedMeta {
       ...partial,
       limit: query.limit,
       currentPage: query.page,
-      totalPage: partial.totalPage ?? Math.ceil(Number(partial.total) / Number(query.limit)),
+      totalPage:
+        partial.totalPage ??
+        Math.ceil(Number(partial.total) / Number(query.limit)),
     })
   }
 }

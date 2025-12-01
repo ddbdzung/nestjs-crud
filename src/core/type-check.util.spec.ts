@@ -2,7 +2,13 @@
  * Unit tests for Type Checking Utilities
  * Test file using Jest framework
  */
-import { isEmpty, isNil, isObject, isPlainObject, isPrimitive } from './common.util'
+import {
+  isEmpty,
+  isNil,
+  isObject,
+  isPlainObject,
+  isPrimitive,
+} from './common.util'
 
 describe('Type Checking Utilities', () => {
   describe('isNil', () => {

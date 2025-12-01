@@ -1,6 +1,12 @@
 import { FastifyReply } from 'fastify'
+import { ClsService } from 'nestjs-cls'
 
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common'
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+} from '@nestjs/common'
 
 import * as exc from '../api/exception.resolver'
 import { BaseError } from '../helpers/error.helper'
@@ -8,8 +14,15 @@ import { AppLogger } from '../logger/logger.service'
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
-  constructor(protected readonly logger: AppLogger) {
-    this.logger.setContext('HttpExceptionFilter')
+  protected readonly logger: AppLogger
+
+  constructor(cls?: ClsService) {
+    // Tạo logger mới với context từ class name
+    if (cls) {
+      this.logger = AppLogger.create(cls, HttpExceptionFilter.name)
+    } else {
+      this.logger = new AppLogger(undefined, HttpExceptionFilter.name)
+    }
   }
 
   async catch(exception: HttpException, host: ArgumentsHost) {
@@ -21,24 +34,31 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let excResponse = exception.getResponse()
     const excStatus = exception.getStatus()
 
+    // Nếu response không phải object hợp lệ (string, number, array, null), chuyển đổi thành BaseError format
     if (
       typeof excResponse !== 'object' ||
-      !Object.getOwnPropertyDescriptor(excResponse, 'success')
+      excResponse === null ||
+      Array.isArray(excResponse)
     ) {
-      let newDataResponse: Record<string, any> =
-        typeof excResponse === 'object' ? excResponse : { message: excResponse }
-      newDataResponse = newDataResponse?.message
-      excResponse = new BaseError(newDataResponse?.message, {
+      const message =
+        typeof excResponse === 'string'
+          ? excResponse
+          : Array.isArray(excResponse)
+            ? JSON.stringify(excResponse)
+            : String(excResponse)
+      excResponse = new BaseError(message, {
         statusCode: excStatus,
         errorCode: exc.UNKNOWN,
-        context: newDataResponse,
+        context: { originalResponse: excResponse },
       }).toJSON()
     }
 
     // HTTP
     if (hostType === 'http') {
-      void response.status(200).send(excResponse)
+      response.status(excStatus).send(excResponse)
       this.logger.debug(excStatus, JSON.stringify(excResponse))
     }
+
+    return excResponse
   }
 }

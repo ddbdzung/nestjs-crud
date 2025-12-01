@@ -56,7 +56,9 @@ export const isObject = (value: unknown): value is object =>
  * Check if value is a plain object (created by Object constructor or literal)
  * @param {*} value - The value to check
  */
-export const isPlainObject = (value: unknown): value is Record<string, unknown> => {
+export const isPlainObject = (
+  value: unknown
+): value is Record<string, unknown> => {
   if (!isObject(value)) return false
   const proto = Object.getPrototypeOf(value)
   return proto === Object.prototype || proto === null
@@ -68,7 +70,8 @@ export const isPlainObject = (value: unknown): value is Record<string, unknown> 
  */
 export const isEmpty = (value: unknown): boolean => {
   if (isNil(value)) return true // null, undefined
-  if (typeof value === 'string' || Array.isArray(value)) return value.length === 0 // '', []
+  if (typeof value === 'string' || Array.isArray(value))
+    return value.length === 0 // '', []
   if (isPlainObject(value)) return Object.keys(value).length === 0 // {}
   return false
 }
@@ -93,10 +96,13 @@ export const isPrimitive = (value: unknown): boolean => {
   )
 }
 
-export const snooze = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+export const snooze = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms))
 
 export const formatCurrency = (amount?: number, currency = 'VND') => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency }).format(amount || 0)
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency }).format(
+    amount || 0
+  )
 }
 
 /**
@@ -144,7 +150,10 @@ export const formatCurrency = (amount?: number, currency = 'VND') => {
  *     error.code === 'TIMEOUT'
  * });
  */
-export async function retryAsync<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
+export async function retryAsync<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions = {}
+): Promise<T> {
   const {
     maxRetries = 3,
     baseDelay = 1_000,

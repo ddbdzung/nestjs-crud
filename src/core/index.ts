@@ -1,4 +1,7 @@
-export type { IBaseErrorOptions, ISerializedError } from './helpers/error.helper'
+export type {
+  IBaseErrorOptions,
+  ISerializedError,
+} from './helpers/error.helper'
 
 export * from './common.util'
 export * from './constants/common.constant'

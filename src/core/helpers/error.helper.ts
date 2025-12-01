@@ -61,7 +61,8 @@ export class BaseError extends Error implements IThrowable {
     this.message = message.trim()
 
     // HTTP context
-    this.statusCode = options.statusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR.code
+    this.statusCode =
+      options.statusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR.code
     this.errorCode = options.errorCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR.key
 
     // Error classification
@@ -83,6 +84,14 @@ export class BaseError extends Error implements IThrowable {
     }
 
     Error.captureStackTrace(this, this.constructor)
+  }
+
+  /**
+   * Getter để truy cập statusCode từ bên ngoài class
+   * @returns HTTP status code
+   */
+  get getStatusCode(): number {
+    return this.statusCode
   }
 
   toJSON(): ISerializedError {

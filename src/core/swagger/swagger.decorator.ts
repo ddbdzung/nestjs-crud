@@ -33,21 +33,40 @@ export const SUMMARIES = {
   BULK_DELETE: 'Xoá hàng loạt',
 }
 
-export const ApiOperation = createApiOperation({ summary: 'Summary description' })
+export const ApiOperation = createApiOperation({
+  summary: 'Summary description',
+})
 export const ApiListOperation = createApiOperation({ summary: SUMMARIES.LIST })
-export const ApiRetrieveOperation = createApiOperation({ summary: SUMMARIES.RETRIEVE })
-export const ApiCreateOperation = createApiOperation({ summary: SUMMARIES.CREATE })
-export const ApiUpdateOperation = createApiOperation({ summary: SUMMARIES.UPDATE })
-export const ApiUpsertOperation = createApiOperation({ summary: SUMMARIES.UPSERT })
-export const ApiPartialOperation = createApiOperation({ summary: SUMMARIES.UPDATE })
-export const ApiDeleteOperation = createApiOperation({ summary: SUMMARIES.DELETE })
-export const ApiBulkDeleteOperation = createApiOperation({ summary: SUMMARIES.BULK_DELETE })
-export const ApiBulkUpdateOperation = createApiOperation({ summary: 'Sửa nhiều bản ghi' })
+export const ApiRetrieveOperation = createApiOperation({
+  summary: SUMMARIES.RETRIEVE,
+})
+export const ApiCreateOperation = createApiOperation({
+  summary: SUMMARIES.CREATE,
+})
+export const ApiUpdateOperation = createApiOperation({
+  summary: SUMMARIES.UPDATE,
+})
+export const ApiUpsertOperation = createApiOperation({
+  summary: SUMMARIES.UPSERT,
+})
+export const ApiPartialOperation = createApiOperation({
+  summary: SUMMARIES.UPDATE,
+})
+export const ApiDeleteOperation = createApiOperation({
+  summary: SUMMARIES.DELETE,
+})
+export const ApiBulkDeleteOperation = createApiOperation({
+  summary: SUMMARIES.BULK_DELETE,
+})
+export const ApiBulkUpdateOperation = createApiOperation({
+  summary: 'Sửa nhiều bản ghi',
+})
 export const ApiUpdateManyOperation = createApiOperation({
   summary: 'Sửa nhiều bản ghi có dữ liệu cập nhật khác nhau',
 })
 export const ApiUpsertManyOperation = createApiOperation({
-  summary: 'Sửa nhiều bản ghi có dữ liệu cập nhật khác nhau hoặc tạo mới nếu chưa tồn tại',
+  summary:
+    'Sửa nhiều bản ghi có dữ liệu cập nhật khác nhau hoặc tạo mới nếu chưa tồn tại',
 })
 
 export function ApiTagsAndBearer(...tags: string[]) {

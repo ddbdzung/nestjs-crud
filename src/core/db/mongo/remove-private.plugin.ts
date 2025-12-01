@@ -24,7 +24,8 @@ export function removePrivatePlugin(schema: Schema): void {
     transform(doc: any, ret: any, options: any) {
       Object.keys(ret).forEach((key) => {
         manageId(ret)
-        if (ignoreStartWithChars.some((char) => key.startsWith(char))) delete ret[key]
+        if (ignoreStartWithChars.some((char) => key.startsWith(char)))
+          delete ret[key]
       })
       if (typeof originalTransform === 'function') {
         return originalTransform.call(this, doc, ret, options)
@@ -41,7 +42,8 @@ export function removePrivatePlugin(schema: Schema): void {
     transform(doc: any, ret: any, options: any) {
       Object.keys(ret).forEach((key) => {
         manageId(ret)
-        if (ignoreStartWithChars.some((char) => key.startsWith(char))) delete ret[key]
+        if (ignoreStartWithChars.some((char) => key.startsWith(char)))
+          delete ret[key]
       })
       if (typeof originalObjectTransform === 'function') {
         return originalObjectTransform.call(this, doc, ret, options)

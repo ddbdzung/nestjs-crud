@@ -40,9 +40,16 @@ class PaginationSpecificationDto {
   page?: number = 1
 }
 
-export class PaginationDto extends PickType(PaginationSpecificationDto, ['limit', 'page']) {
-  static readonly getSkip = (query?: Partial<PaginationSpecificationDto>): number => {
-    return ((query?.page || 1) - 1) * (query?.limit || config.PAGINATION_PAGE_SIZE)
+export class PaginationDto extends PickType(PaginationSpecificationDto, [
+  'limit',
+  'page',
+]) {
+  static readonly getSkip = (
+    query?: Partial<PaginationSpecificationDto>
+  ): number => {
+    return (
+      ((query?.page || 1) - 1) * (query?.limit || config.PAGINATION_PAGE_SIZE)
+    )
   }
 }
 
@@ -76,15 +83,19 @@ class SearchSpecificationDto {
   @IsString({ each: true })
   searchFields?: string[]
 }
-export class SearchDto extends PickType(SearchSpecificationDto, ['q', 'searchFields']) {}
-export class SearchFieldsDto extends PickType(SearchSpecificationDto, ['q', 'searchFields']) {}
+export class SearchDto extends PickType(SearchSpecificationDto, [
+  'q',
+  'searchFields',
+]) {}
+export class SearchFieldsDto extends PickType(SearchSpecificationDto, [
+  'q',
+  'searchFields',
+]) {}
 
 // QUERY
-export class QuerySpecificationDto<TFilter = Record<string, any>> extends IntersectionType(
-  PaginationDto,
-  SortSpecificationDto,
-  SearchDto
-) {
+export class QuerySpecificationDto<
+  TFilter = Record<string, any>,
+> extends IntersectionType(PaginationDto, SortSpecificationDto, SearchDto) {
   filter?: TFilter
 }
 
@@ -104,7 +115,9 @@ export type FactoryType<TFilter> = NestType<
   Pick<QuerySpecificationDto<TFilter>, keyof QuerySpecificationDto<TFilter>>
 >
 
-export const factoryQueryDto = <TFilter>(options: IFactoryOption = {}): FactoryType<TFilter> => {
+export const factoryQueryDto = <TFilter>(
+  options: IFactoryOption = {}
+): FactoryType<TFilter> => {
   let { filterExample = '{"createdById": 1}' } = options
   if (typeof filterExample !== 'string') {
     filterExample = JSON.stringify(filterExample)
@@ -133,7 +146,9 @@ export const factoryQueryDto = <TFilter>(options: IFactoryOption = {}): FactoryT
       description:
         (options.filterCls?.name ?? '') +
         '<br>' +
-        (options.filterOptions?.description ? options.filterOptions.description + '<br>' : '') +
+        (options.filterOptions?.description
+          ? options.filterOptions.description + '<br>'
+          : '') +
         'example: ' +
         filterExample,
     })
@@ -175,7 +190,8 @@ export const factoryQueryDto = <TFilter>(options: IFactoryOption = {}): FactoryT
 export const factorySpecificationQueryDto = <TFilter>(
   options: IFactoryOption = {}
 ): FactoryType<TFilter> => {
-  const limitMax = options.paginationOptions?.maxLimit ?? config.PAGINATION_PAGE_SIZE
+  const limitMax =
+    options.paginationOptions?.maxLimit ?? config.PAGINATION_PAGE_SIZE
 
   // custom pagination with adjustable max limit
   class CustomPaginationDto extends PaginationDto {
@@ -183,7 +199,8 @@ export const factorySpecificationQueryDto = <TFilter>(
     @IsPositive()
     @Type(() => Number)
     @Max(limitMax)
-    override limit?: number = options.paginationOptions?.defaultLimit ?? limitMax
+    override limit?: number =
+      options.paginationOptions?.defaultLimit ?? limitMax
   }
 
   class SpecificationDto extends IntersectionType(

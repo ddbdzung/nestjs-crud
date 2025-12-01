@@ -4,12 +4,16 @@ import { Document, FilterQuery, Model } from 'mongoose'
 import { BaseDeleteService } from './base-delete.service'
 import { IServiceOptions } from './base.interface'
 
-export class BaseService<TDoc extends Document> extends BaseDeleteService<TDoc> {
+export class BaseService<
+  TDoc extends Document,
+> extends BaseDeleteService<TDoc> {
   protected override readonly model: Model<TDoc>
   protected override readonly logger: AppLogger
   protected readonly alias: string
 
-  protected async exists(filter: FilterQuery<TDoc>): Promise<{ _id: any } | null> {
+  protected async exists(
+    filter: FilterQuery<TDoc>
+  ): Promise<{ _id: any } | null> {
     return await this.model.exists(filter)
   }
 
@@ -28,7 +32,7 @@ export class BaseService<TDoc extends Document> extends BaseDeleteService<TDoc> 
       if (err) {
         this.logger.error(
           `[Mongo Index] ${this.alias} index build failed: ${err.message}`,
-          err.stack
+          err
         )
         // TODO: Handle error manually or disable in production
         throw err
